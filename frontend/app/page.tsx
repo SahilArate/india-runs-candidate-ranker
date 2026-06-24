@@ -1,65 +1,125 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const [jdText, setJdText] = useState("");
+  const [topK, setTopK] = useState(100);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRank = async () => {
+    if (!jdText.trim()) {
+      setError("Please enter a job description.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/rank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jd_text: jdText, top_k: topK }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to rank candidates. Make sure the backend is running.");
+      }
+      const data = await response.json();
+      sessionStorage.setItem("rankResults", JSON.stringify(data));
+      router.push("/results");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="max-w-3xl mx-auto">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-white mb-3">
+          Intelligent Candidate Ranker
+        </h1>
+        <p className="text-gray-400 text-lg">
+          Paste a job description below. Our system ranks candidates by semantic
+          fit, career signals, and platform activity — not just keywords.
+        </p>
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Job Description
+          </label>
+          <textarea
+            className="w-full h-64 bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none text-sm leading-relaxed"
+            placeholder="Paste the full job description here..."
+            value={jdText}
+            onChange={(e) => setJdText(e.target.value)}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Number of candidates to return
+          </label>
+          <select
+            className="bg-gray-950 border border-gray-700 rounded-xl px-4 py-2.5 text-gray-100 focus:outline-none focus:border-blue-500 text-sm"
+            value={topK}
+            onChange={(e) => setTopK(Number(e.target.value))}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <option value={10}>Top 10</option>
+            <option value={25}>Top 25</option>
+            <option value={50}>Top 50</option>
+            <option value={100}>Top 100</option>
+          </select>
         </div>
-      </main>
+
+        {error && (
+          <div className="bg-red-950 border border-red-800 text-red-300 rounded-xl px-4 py-3 text-sm">
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleRank}
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+        >
+          {loading ? "Ranking candidates..." : "Rank Candidates"}
+        </button>
+      </div>
+
+      <div className="mt-10 grid grid-cols-3 gap-4">
+        {[
+          {
+            title: "Semantic Matching",
+            desc: "Understands meaning, not just keywords",
+          },
+          {
+            title: "Behavioral Signals",
+            desc: "23 platform activity signals integrated",
+          },
+          {
+            title: "Explainable Results",
+            desc: "Every rank backed by real evidence",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4"
+          >
+            <h3 className="text-white font-medium text-sm mb-1">{item.title}</h3>
+            <p className="text-gray-500 text-xs">{item.desc}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
