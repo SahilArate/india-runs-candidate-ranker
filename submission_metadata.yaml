@@ -1,0 +1,37 @@
+submission:
+  team_name: "Your Name Here"
+  team_members:
+    - name: "Sahil Arate"
+      role: "Developer"
+      github: "https://github.com/SahilArate"
+  hackathon: "India Runs - Data & AI Challenge"
+  track: "Track 1 - Intelligent Candidate Discovery"
+
+approach:
+  methodology: "Hybrid ranking system combining semantic embeddings with multi-signal feature scoring"
+  embedding_model: "all-MiniLM-L6-v2"
+  ranking_stages:
+    - "Structured JD parsing into explicit requirement schema"
+    - "Semantic similarity via precomputed sentence embeddings"
+    - "Feature engineering across title relevance, experience fit, company type and career trajectory"
+    - "Behavioral signal fusion from 23 redrob platform signals"
+    - "Honeypot and inconsistency detection"
+    - "Weighted score fusion into final ranked shortlist"
+
+compute:
+  runtime_seconds: "under 300"
+  memory_gb: "under 16"
+  gpu_required: false
+  network_required: false
+  cpu_only: true
+
+reproduce:
+  command: "python rank.py --candidates ./data/candidates.jsonl --jd ./data/job_description.txt --out ./submission.csv"
+  python_version: "3.11+"
+  install_command: "pip install -r backend/requirements.txt"
+
+ai_tools_declaration:
+  used: true
+  tools:
+    - "Claude AI - used for architectural guidance and code review"
+  note: "All code written, understood and owned by the developer. AI used as a reference tool only."
